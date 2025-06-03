@@ -24,8 +24,8 @@ public class MyGame {
 
   // ゲームの状態を保持するフィールド
   Board board;          // ゲームボード
-  Player black;         // 黒プレイヤー
-  Player white;         // 白プレイヤー
+  Player firstPlayer;   // 先手プレイヤー
+  Player secondPlayer;  // 後手プレイヤー
   Map<Color, Player> players;  // 色とプレイヤーの対応付け
   List<Move> moves = new ArrayList<>();  // 手の履歴
   Map<Color, Float> times = new HashMap<>(Map.of(BLACK, 0f, WHITE, 0f));  // 各プレイヤーの思考時間
@@ -33,11 +33,22 @@ public class MyGame {
   /**
    * コンストラクタ
    */
-  public MyGame(Board board, Player black, Player white) {
+  public MyGame(Board board, Player firstPlayer, Player secondPlayer) {
     this.board = board.clone();
-    this.black = black;
-    this.white = white;
-    this.players = Map.of(BLACK, black, WHITE, white);
+    this.firstPlayer = firstPlayer;
+    this.secondPlayer = secondPlayer;
+    this.players = Map.of(BLACK, firstPlayer, WHITE, secondPlayer);
+  }
+
+  /**
+   * 先手と後手を入れ替えるメソッド
+   */
+  private void swapPlayers() {
+    // 新しいプレイヤーインスタンスを作成
+    this.firstPlayer = new myplayer.RandomPlayer(BLACK);
+    this.secondPlayer = new myplayer.MyPlayer(WHITE);
+    this.players = Map.of(BLACK, this.firstPlayer, WHITE, this.secondPlayer);
+    System.out.println("\n先手後手を交代します");
   }
 
   /**
@@ -46,8 +57,8 @@ public class MyGame {
   public void play() {
     // ゲームを200回繰り返して結果を集計する（先手後手100回ずつ）
     var gameCount = 200;
-    var blackWins = 0;
-    var whiteWins = 0;
+    var firstPlayerWins = 0;
+    var secondPlayerWins = 0;
     var draws = 0;
     System.out.println("Game Start: " + this.toString());
     
@@ -55,11 +66,7 @@ public class MyGame {
     for (int i = 0; i < gameCount; i++) {
       // 100回ごとに先手後手を交代
       if (i == gameCount / 2) {
-        var temp = this.black;
-        this.black = this.white;
-        this.white = temp;
-        this.players = Map.of(BLACK, this.black, WHITE, this.white);
-        System.out.println("\n先手後手を交代します");
+        swapPlayers();
       }
       
       System.out.printf("Game %d: ", i + 1);
@@ -67,10 +74,20 @@ public class MyGame {
       var winner = this.getWinner(this.board);  // 勝者を取得
       if (winner == null) {
         draws++;
-      } else if (winner.getColor() == BLACK) {
-        blackWins++;
+      } else if (i < gameCount / 2) {
+        // 前半戦（100回目まで）
+        if (winner == firstPlayer) {
+          firstPlayerWins++;
+        } else {
+          secondPlayerWins++;
+        }
       } else {
-        whiteWins++;
+        // 後半戦（101回目以降）
+        if (winner == firstPlayer) {
+          secondPlayerWins++;  // 後半戦では先手が勝ったら後手の勝利としてカウント
+        } else {
+          firstPlayerWins++;   // 後半戦では後手が勝ったら先手の勝利としてカウント
+        }
       }
       System.out.println();
       // 各ゲームの後にボードをリセット
@@ -82,8 +99,8 @@ public class MyGame {
     // 結果を表示
     System.out.printf("\n=== 対戦結果 ===\n");
     System.out.printf("総対戦数: %d\n", gameCount);
-    System.out.printf("黒の勝利: %d (%.1f%%)\n", blackWins, (float)blackWins/gameCount*100);
-    System.out.printf("白の勝利: %d (%.1f%%)\n", whiteWins, (float)whiteWins/gameCount*100);
+    System.out.printf("先手の勝利: %d (%.1f%%)\n", firstPlayerWins, (float)firstPlayerWins/gameCount*100);
+    System.out.printf("後手の勝利: %d (%.1f%%)\n", secondPlayerWins, (float)secondPlayerWins/gameCount*100);
     System.out.printf("引き分け: %d (%.1f%%)\n", draws, (float)draws/gameCount*100);
   }
 
@@ -184,7 +201,7 @@ public class MyGame {
    * プレイヤー情報の文字列表現を返す
    */
   public String toString() {
-    return String.format("%4s vs %4s", this.black, this.white);
+    return String.format("%4s vs %4s", this.firstPlayer, this.secondPlayer);
   }
 
   /**
