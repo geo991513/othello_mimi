@@ -44,6 +44,50 @@ public class MyGame {
    * ゲームを開始し、進行を管理するメソッド
    */
   public void play() {
+    // ゲームを200回繰り返して結果を集計する（先手後手100回ずつ）
+    var gameCount = 200;
+    var blackWins = 0;
+    var whiteWins = 0;
+    var draws = 0;
+    System.out.println("Game Start: " + this.toString());
+    
+    // 先手後手を交代しながら200回対戦
+    for (int i = 0; i < gameCount; i++) {
+      // 100回ごとに先手後手を交代
+      if (i == gameCount / 2) {
+        var temp = this.black;
+        this.black = this.white;
+        this.white = temp;
+        this.players = Map.of(BLACK, this.black, WHITE, this.white);
+        System.out.println("\n先手後手を交代します");
+      }
+      
+      System.out.printf("Game %d: ", i + 1);
+      playOneGame();
+      var winner = this.getWinner(this.board);  // 勝者を取得
+      if (winner == null) {
+        draws++;
+      } else if (winner.getColor() == BLACK) {
+        blackWins++;
+      } else {
+        whiteWins++;
+      }
+      System.out.println();
+      // 各ゲームの後にボードをリセット
+      this.board = new MyBoard();
+      this.moves.clear();
+      this.times.replaceAll((k, v) -> 0.0f);  // 各プレイヤーの思考時間をリセット
+    }
+    
+    // 結果を表示
+    System.out.printf("\n=== 対戦結果 ===\n");
+    System.out.printf("総対戦数: %d\n", gameCount);
+    System.out.printf("黒の勝利: %d (%.1f%%)\n", blackWins, (float)blackWins/gameCount*100);
+    System.out.printf("白の勝利: %d (%.1f%%)\n", whiteWins, (float)whiteWins/gameCount*100);
+    System.out.printf("引き分け: %d (%.1f%%)\n", draws, (float)draws/gameCount*100);
+  }
+
+  public void playOneGame() {    
     // 各プレイヤーにボードの状態を設定
     this.players.values().forEach(p -> p.setBoard(this.board.clone()));
 
@@ -81,7 +125,7 @@ public class MyGame {
         break;
       }
 
-      System.out.println(board);
+      // System.out.println(board);
     }
 
     printResult(board, moves);
